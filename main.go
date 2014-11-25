@@ -43,7 +43,7 @@ func main() {
 	var orms ListOpts
 	flag.IntVar(&benchs.ORM_MAX_IDLE, "max_idle", 200, "max idle conns")
 	flag.IntVar(&benchs.ORM_MAX_CONN, "max_conn", 200, "max open conns")
-	flag.StringVar(&benchs.ORM_SOURCE, "source", "user=postgres password=root dbname=linkedtec sslmode=disable", "postgres dsn source")
+	flag.StringVar(&benchs.ORM_SOURCE, "source", "user=postgres password=root dbname=testdb sslmode=disable", "postgres dsn source")
 	flag.IntVar(&benchs.ORM_MULTI, "multi", 1, "base query nums x multi")
 	flag.Var(&orms, "orm", "orm name: all, "+strings.Join(benchs.BrandNames, ", "))
 	flag.Parse()
