@@ -17,7 +17,7 @@ func init() {
 		st.AddBenchmark("Read", 4000*ORM_MULTI, XormRead)
 		st.AddBenchmark("MultiRead limit 100", 2000*ORM_MULTI, XormReadSlice)
 
-		engine, _ := xorm.NewEngine("mysql", ORM_SOURCE)
+		engine, _ := xorm.NewEngine("postgres", ORM_SOURCE)
 
 		engine.SetMaxIdleConns(ORM_MAX_IDLE)
 		engine.SetMaxConns(ORM_MAX_CONN)

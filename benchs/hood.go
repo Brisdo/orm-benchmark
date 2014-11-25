@@ -18,8 +18,8 @@ func init() {
 		st.AddBenchmark("Read", 4000*ORM_MULTI, HoodRead)
 		st.AddBenchmark("MultiRead limit 100", 2000*ORM_MULTI, HoodReadSlice)
 
-		db, _ := sql.Open("mysql", ORM_SOURCE)
-		ho = hood.New(db, hood.NewMysql())
+		db, _ := sql.Open("postgres", ORM_SOURCE)
+		ho = hood.New(db, hood.NewPostgres())
 	}
 }
 

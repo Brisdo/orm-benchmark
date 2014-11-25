@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/beego/orm-benchmark/benchs"
+	"./benchs"
 
-	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/lib/pq"
 )
 
 type ListOpts []string
@@ -43,7 +43,7 @@ func main() {
 	var orms ListOpts
 	flag.IntVar(&benchs.ORM_MAX_IDLE, "max_idle", 200, "max idle conns")
 	flag.IntVar(&benchs.ORM_MAX_CONN, "max_conn", 200, "max open conns")
-	flag.StringVar(&benchs.ORM_SOURCE, "source", "root:@/orm_bench?charset=utf8", "mysql dsn source")
+	flag.StringVar(&benchs.ORM_SOURCE, "source", "user=postgres password=root dbname=linkedtec sslmode=disable", "postgres dsn source")
 	flag.IntVar(&benchs.ORM_MULTI, "multi", 1, "base query nums x multi")
 	flag.Var(&orms, "orm", "orm name: all, "+strings.Join(benchs.BrandNames, ", "))
 	flag.Parse()
@@ -59,6 +59,7 @@ func main() {
 			}
 		}
 	}
+	fmt.Println(benchs.ORM_SOURCE)
 
 	if all {
 		orms = ListOpts(benchs.BrandNames)

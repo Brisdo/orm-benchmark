@@ -17,7 +17,7 @@ func init() {
 		st.AddBenchmark("Read", 4000*ORM_MULTI, BeegoOrmRead)
 		st.AddBenchmark("MultiRead limit 100", 2000*ORM_MULTI, BeegoOrmReadSlice)
 
-		orm.RegisterDataBase("default", "mysql", ORM_SOURCE, ORM_MAX_IDLE, ORM_MAX_CONN)
+		orm.RegisterDataBase("default", "postgres", ORM_SOURCE, ORM_MAX_IDLE, ORM_MAX_CONN)
 		orm.RegisterModel(new(Model))
 
 		bo = orm.NewOrm()

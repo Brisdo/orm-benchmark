@@ -17,7 +17,7 @@ func init() {
 		st.AddBenchmark("Read", 4000*ORM_MULTI, QbsRead)
 		st.AddBenchmark("MultiRead limit 100", 2000*ORM_MULTI, QbsReadSlice)
 
-		qbs.Register("mysql", ORM_SOURCE, "model", qbs.NewMysql())
+		qbs.Register("postgres", ORM_SOURCE, "model", qbs.NewPostgres())
 		qbs.ChangePoolSize(ORM_MAX_IDLE)
 		qbs.SetConnectionLimit(ORM_MAX_CONN, true)
 

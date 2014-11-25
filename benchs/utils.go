@@ -13,7 +13,7 @@ type Model struct {
 	Fax     string
 	Web     string
 	Age     int
-	Right   bool
+	Aight   bool
 	Counter int64
 }
 
@@ -24,7 +24,7 @@ func NewModel() *Model {
 	m.Fax = "99909990"
 	m.Web = "http://beego.me"
 	m.Age = 100
-	m.Right = true
+	m.Aight = true
 	m.Counter = 1000
 
 	return m
@@ -52,21 +52,20 @@ func wrapExecute(b *B, cbk func()) {
 
 func initDB() {
 	sqls := []string{
-		"DROP TABLE IF EXISTS `model`",
-		"CREATE TABLE `orm_bench`.`model` (" +
-			"`id` int(11) NOT NULL AUTO_INCREMENT," +
-			"`name` varchar(255) NOT NULL," +
-			"`title` varchar(255) NOT NULL," +
-			"`fax` varchar(255) NOT NULL," +
-			"`web` varchar(255) NOT NULL," +
-			"`age` int(11) NOT NULL," +
-			"`right` tinyint(1) NOT NULL," +
-			"`counter` bigint(20) NOT NULL," +
-			"PRIMARY KEY (`id`)" +
-			") ENGINE=`INNODB` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci",
+		"DROP TABLE IF EXISTS model",
+		"CREATE TABLE model (" +
+			"id SERIAL PRIMARY KEY," +
+			"name text," +
+			"title text," +
+			"fax text," +
+			"web text," +
+			"age int," +
+			"aight  boolean," +
+			"counter bigint" +
+			") ",
 	}
 
-	DB, err := sql.Open("mysql", ORM_SOURCE)
+	DB, err := sql.Open("postgres", ORM_SOURCE)
 	checkErr(err)
 	defer DB.Close()
 
@@ -74,6 +73,7 @@ func initDB() {
 	checkErr(err)
 
 	for _, sql := range sqls {
+		//fmt.Printf(sql)
 		_, err = DB.Exec(sql)
 		checkErr(err)
 	}
