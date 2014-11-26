@@ -107,7 +107,6 @@ func RawUpdate(b *B) {
 		initDB()
 		m = NewModel()
 		rawInsert(m)
-		fmt.Println("id is ", m.Id)
 		stmt, err = raw.Prepare(rawUpdateSQL)
 		if err != nil {
 			fmt.Println(err)
