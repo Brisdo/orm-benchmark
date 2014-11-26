@@ -26,38 +26,38 @@ func init() {
 		st.AddBenchmark("Update", 2000*ORM_MULTI, RawUpdate)
 		st.AddBenchmark("Read", 4000*ORM_MULTI, RawRead)
 		st.AddBenchmark("MultiRead limit 100", 2000*ORM_MULTI, RawReadSlice)
-
 		raw, _ = sql.Open("postgres", ORM_SOURCE)
 	}
 }
 
 func RawInsert(b *B) {
 	var m *Model
-
+	var stmt *sql.Stmt
+	sqlInsertNew := rawInsertSQL + rawInsertReturnId
 	wrapExecute(b, func() {
 		var err error
 		initDB()
 		m = NewModel()
+		stmt, err = raw.Prepare(sqlInsertNew)
 		if err != nil {
 			fmt.Println(err)
 			b.FailNow()
 		}
 	})
-	//defer raw.Close()
-	sqlInsert := rawInsertSQL + rawInsertBaseSQL
+	defer stmt.Close()
+
 	for i := 0; i < b.N; i++ {
-		err := raw.QueryRow(sqlInsert, m.Name, m.Title, m.Fax, m.Web, m.Age, m.Aight, m.Counter).Scan(&m.Id)
+		err := stmt.QueryRow(m.Name, m.Title, m.Fax, m.Web, m.Age, m.Aight, m.Counter).Scan(&m.Id)
 		if err != nil {
 			fmt.Println(err)
 			b.FailNow()
 		}
-
 	}
 }
 
 func rawInsert(m *Model) error {
-	sqlInsert := rawInsertSQL + rawInsertBaseSQL
-	err := raw.QueryRow(sqlInsert, m.Name, m.Title, m.Fax, m.Web, m.Age, m.Aight, m.Counter).Scan(&m.Id)
+	sqlInsertNew := rawInsertSQL + rawInsertReturnId
+	err := raw.QueryRow(sqlInsertNew, m.Name, m.Title, m.Fax, m.Web, m.Age, m.Aight, m.Counter).Scan(&m.Id)
 	if err != nil {
 		return err
 	}
@@ -89,7 +89,8 @@ func RawInsertMulti(b *B) {
 			args[offset+5] = ms[j].Aight
 			args[offset+6] = ms[j].Counter
 		}
-		_, err := raw.Query(query, args...)
+		m := ms[0]
+		_, err := raw.Exec(query, m.Name, m.Title, m.Fax, m.Web, m.Age, m.Aight, m.Counter)
 		if err != nil {
 			fmt.Println(err)
 			b.FailNow()
@@ -102,15 +103,21 @@ func RawUpdate(b *B) {
 	var m *Model
 	var stmt *sql.Stmt
 	wrapExecute(b, func() {
+		var err error
 		initDB()
 		m = NewModel()
 		rawInsert(m)
-
+		fmt.Println("id is ", m.Id)
+		stmt, err = raw.Prepare(rawUpdateSQL)
+		if err != nil {
+			fmt.Println(err)
+			b.FailNow()
+		}
 	})
 	defer stmt.Close()
 
 	for i := 0; i < b.N; i++ {
-		_, err := raw.Query(rawUpdateSQL, m.Name, m.Title, m.Fax, m.Web, m.Age, m.Aight, m.Counter, m.Id)
+		_, err := stmt.Exec(m.Name, m.Title, m.Fax, m.Web, m.Age, m.Aight, m.Counter, m.Id)
 		if err != nil {
 			fmt.Println(err)
 			b.FailNow()
@@ -126,11 +133,17 @@ func RawRead(b *B) {
 		initDB()
 		m = NewModel()
 		rawInsert(m)
+		stmt, err = raw.Prepare(rawSelectSQL)
+		if err != nil {
+			fmt.Println(err)
+			b.FailNow()
+		}
 	})
+	defer stmt.Close()
 
 	for i := 0; i < b.N; i++ {
 		var mout Model
-		err := raw.QueryRow(rawSelectSQL, rm.Id).Scan(
+		err := stmt.QueryRow(m.Id).Scan(
 			&mout.Id,
 			&mout.Name,
 			&mout.Title,
@@ -161,12 +174,18 @@ func RawReadSlice(b *B) {
 				b.FailNow()
 			}
 		}
+		stmt, err = raw.Prepare(rawSelectMultiSQL)
+		if err != nil {
+			fmt.Println(err)
+			b.FailNow()
+		}
 	})
+	defer stmt.Close()
 
 	for i := 0; i < b.N; i++ {
 		var j int
 		models := make([]Model, 100)
-		rows, err := raw.Query(rawSelectMultiSQL)
+		rows, err := stmt.Query()
 		if err != nil {
 			fmt.Println(err)
 			b.FailNow()

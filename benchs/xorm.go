@@ -8,7 +8,7 @@ import (
 
 var xo *xorm.Session
 
-func init() {
+func initsss() {
 	st := NewSuite("xorm")
 	st.InitF = func() {
 		st.AddBenchmark("Insert", 2000*ORM_MULTI, XormInsert)
