@@ -10,10 +10,11 @@ var raw *sql.DB
 
 const (
 	rawInsertBaseSQL   = "INSERT INTO model (name, title, fax, web, age, aight, counter) VALUES "
-	rawInsertValuesSQL = "(?, ?, ?, ?, ?, ?, ?)"
+	rawInsertValuesSQL = "($1, $2, $3, $4, $5, $6, $7)"
+	rawInsertReturnId  = " RETURNING id"
 	rawInsertSQL       = rawInsertBaseSQL + rawInsertValuesSQL
-	rawUpdateSQL       = "UPDATE model SET name=?, title=?, fax=?, web=?, age=?, aight=?, counter=? WHERE id=?"
-	rawSelectSQL       = "SELECT id, name, title, fax, web, age, aight, counter FROM model WHERE id=?"
+	rawUpdateSQL       = "UPDATE model SET name=$1, title=$2, fax=$3, web=$4, age=$5, aight=$6, counter=$7 WHERE id=$8"
+	rawSelectSQL       = "SELECT id, name, title, fax, web, age, aight, counter FROM model WHERE id=$1"
 	rawSelectMultiSQL  = "SELECT id, name, title, fax, web, age, aight, counter FROM model WHERE id>0 LIMIT 100"
 )
 
@@ -32,41 +33,34 @@ func init() {
 
 func RawInsert(b *B) {
 	var m *Model
-	var stmt *sql.Stmt
+
 	wrapExecute(b, func() {
 		var err error
 		initDB()
 		m = NewModel()
-		stmt, err = raw.Prepare(rawInsertSQL)
 		if err != nil {
 			fmt.Println(err)
 			b.FailNow()
 		}
 	})
-	defer stmt.Close()
-
+	//defer raw.Close()
+	sqlInsert := rawInsertSQL + rawInsertBaseSQL
 	for i := 0; i < b.N; i++ {
-		res, err := stmt.Exec(m.Name, m.Title, m.Fax, m.Web, m.Age, m.Aight, m.Counter)
+		err := raw.QueryRow(sqlInsert, m.Name, m.Title, m.Fax, m.Web, m.Age, m.Aight, m.Counter).Scan(&m.Id)
 		if err != nil {
 			fmt.Println(err)
 			b.FailNow()
 		}
-		id, err := res.LastInsertId()
-		m.Id = int(id)
-		if err != nil {
-			fmt.Println(err)
-			b.FailNow()
-		}
+
 	}
 }
 
 func rawInsert(m *Model) error {
-	res, err := raw.Exec(rawInsertSQL, m.Name, m.Title, m.Fax, m.Web, m.Age, m.Aight, m.Counter)
+	sqlInsert := rawInsertSQL + rawInsertBaseSQL
+	err := raw.QueryRow(sqlInsert, m.Name, m.Title, m.Fax, m.Web, m.Age, m.Aight, m.Counter).Scan(&m.Id)
 	if err != nil {
 		return err
 	}
-	id, err := res.LastInsertId()
-	m.Id = int(id)
 	return err
 }
 
@@ -95,16 +89,12 @@ func RawInsertMulti(b *B) {
 			args[offset+5] = ms[j].Aight
 			args[offset+6] = ms[j].Counter
 		}
-		res, err := raw.Exec(query, args...)
+		_, err := raw.Query(query, args...)
 		if err != nil {
 			fmt.Println(err)
 			b.FailNow()
 		}
-		_, err = res.LastInsertId()
-		if err != nil {
-			fmt.Println(err)
-			b.FailNow()
-		}
+
 	}
 }
 
@@ -112,20 +102,15 @@ func RawUpdate(b *B) {
 	var m *Model
 	var stmt *sql.Stmt
 	wrapExecute(b, func() {
-		var err error
 		initDB()
 		m = NewModel()
 		rawInsert(m)
-		stmt, err = raw.Prepare(rawUpdateSQL)
-		if err != nil {
-			fmt.Println(err)
-			b.FailNow()
-		}
+
 	})
 	defer stmt.Close()
 
 	for i := 0; i < b.N; i++ {
-		_, err := stmt.Exec(m.Name, m.Title, m.Fax, m.Web, m.Age, m.Aight, m.Counter, m.Id)
+		_, err := raw.Query(rawUpdateSQL, m.Name, m.Title, m.Fax, m.Web, m.Age, m.Aight, m.Counter, m.Id)
 		if err != nil {
 			fmt.Println(err)
 			b.FailNow()
@@ -141,17 +126,11 @@ func RawRead(b *B) {
 		initDB()
 		m = NewModel()
 		rawInsert(m)
-		stmt, err = raw.Prepare(rawSelectSQL)
-		if err != nil {
-			fmt.Println(err)
-			b.FailNow()
-		}
 	})
-	defer stmt.Close()
 
 	for i := 0; i < b.N; i++ {
 		var mout Model
-		err := stmt.QueryRow(m.Id).Scan(
+		err := raw.QueryRow(rawSelectSQL, rm.Id).Scan(
 			&mout.Id,
 			&mout.Name,
 			&mout.Title,
@@ -182,18 +161,12 @@ func RawReadSlice(b *B) {
 				b.FailNow()
 			}
 		}
-		stmt, err = raw.Prepare(rawSelectMultiSQL)
-		if err != nil {
-			fmt.Println(err)
-			b.FailNow()
-		}
 	})
-	defer stmt.Close()
 
 	for i := 0; i < b.N; i++ {
 		var j int
 		models := make([]Model, 100)
-		rows, err := stmt.Query()
+		rows, err := raw.Query(rawSelectMultiSQL)
 		if err != nil {
 			fmt.Println(err)
 			b.FailNow()
